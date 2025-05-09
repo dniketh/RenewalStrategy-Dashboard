@@ -174,3 +174,7 @@ cython_debug/
 .pypirc
 
 .saved_model/
+.DS_Store
+*.xml
+*.iml
+*.joblib
