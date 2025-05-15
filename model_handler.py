@@ -1,14 +1,14 @@
 # model_handler.py
 
-import joblib # Assuming you saved your Pipeline using joblib
-import streamlit as st
-from config import MODEL_PATH, OUTCOME_LABELS
+import joblib
 import pandas as pd
-import numpy as np # Needed for checking output shape
-from sklearn.pipeline import Pipeline # Import Pipeline for type hinting/checks
-from sklearn.compose import ColumnTransformer # Import ColumnTransformer for type hinting/checks
+import streamlit as st
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 
-# Use st.cache_resource to cache the model loading
+from config import MODEL_PATH, OUTCOME_LABELS
+
+
 @st.cache_resource
 def load_ml_model(model_path: str):
     """Loads the trained machine learning model pipeline."""
@@ -37,10 +37,7 @@ def load_ml_model(model_path: str):
         model_classes = list(classifier.classes_)
         if sorted(model_classes) != sorted(OUTCOME_LABELS):
              st.warning(f"Model classes {model_classes} do not match expected outcome labels {OUTCOME_LABELS}. Predictions might be misinterpreted.")
-
-
-
-        return pipeline # Return the full pipeline
+        return pipeline
 
     except FileNotFoundError:
         st.error(f"Model file not found at {MODEL_PATH}. Please check the path in config.py.")
@@ -51,7 +48,7 @@ def load_ml_model(model_path: str):
         print(f"Error loading ML model pipeline: {e}")
         return None
 
-# Modify predict_probabilities to accept the full pipeline
+
 def predict_probabilities(pipeline: Pipeline, raw_df: pd.DataFrame) -> pd.DataFrame | None:
     """
     Makes probability predictions using the loaded model pipeline.
@@ -73,16 +70,12 @@ def predict_probabilities(pipeline: Pipeline, raw_df: pd.DataFrame) -> pd.DataFr
 
         classifier = pipeline.named_steps['classifier']
         class_labels = classifier.classes_
-
         prob_df = pd.DataFrame(probabilities, columns=[f'prob_{label}' for label in class_labels])
-
         for label in OUTCOME_LABELS:
             if f'prob_{label}' not in prob_df.columns:
-                prob_df[f'prob_{label}'] = 0.0 # Add missing class probability column with 0
+                prob_df[f'prob_{label}'] = 0.0 #if missing anything
 
         prob_df = prob_df[[f'prob_{label}' for label in OUTCOME_LABELS]]
-
-
         print("Predictions made successfully using the pipeline.")
         return prob_df
 

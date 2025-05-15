@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 
-# Use 'df_original_full' consistently as the key for the main dataframe
 MAIN_DF_SESSION_STATE_KEY = 'df_original_full'
 
 def save_dataframe_to_session_state(df: pd.DataFrame):
@@ -21,4 +20,3 @@ def clear_session_state_data():
     if MAIN_DF_SESSION_STATE_KEY in st.session_state:
         del st.session_state[MAIN_DF_SESSION_STATE_KEY]
         print("Data cleared from session state using key:", MAIN_DF_SESSION_STATE_KEY)
-    # Note: In app.py, we will clear other related keys explicitly
