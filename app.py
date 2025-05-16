@@ -202,9 +202,9 @@ if st.session_state['df_per_customer_results'] is not None and not st.session_st
     else:
          st.warning("Total Expected Value (Optimal Retention Treatment) could not be computed.")
 
-   # if 'Historical Expected Value' in df_results.columns and not df_results['Historical Expected Value'].isnull().all():
-        #total_historical_value  = df_results['Historical Expected Value'].sum()
-        #st.metric(label="Total Historical Value (Optimal Retention Treatment)", value=f"${total_historical_value:,.2f}") # Format as currency
+    if 'Historical Expected Value' in df_results.columns and not df_results['Historical Expected Value'].isnull().all():
+        total_historical_value  = df_results['Historical Expected Value'].sum()
+        st.metric(label="Total Historical Value (Optimal Retention Treatment)", value=f"${total_historical_value:,.2f}") # Format as currency
 
     st.subheader("Expected Churn Comparison")
 
@@ -386,10 +386,23 @@ if st.session_state['df_per_customer_results'] is not None and not st.session_st
         if col in df_results.columns and col not in display_cols:
             display_cols.append(col)
 
-    display_cols = [col for col in display_cols if col in df_results.columns]
+
+    possible_treatment_cols = [col for col in df_results.columns if
+                               col.startswith("EV for ") or col.startswith("Prob_")]
+    for col in possible_treatment_cols:
+        if col not in display_cols:
+            display_cols.append(col)
 
     if display_cols:
         st.dataframe(df_results[display_cols].head())
+
+        csv_data = df_results.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Full Results as CSV",
+            data=csv_data,
+            file_name='customer_optimized_results.csv',
+            mime='text/csv'
+        )
     else:
         st.warning("Core result columns not found in the results DataFrame.")
 

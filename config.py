@@ -29,7 +29,7 @@ COLUMNS_TO_DROP_RAW = ['customer_id', 'renewal_date']
 
 
 TREATMENT_INPUT_COL = 'treatment_given'
-DISCOUNT_INPUT_COL = 'discount_offered'
+DISCOUNT_INPUT_COL = 'before_discount'
 
 
 POSSIBLE_TREATMENTS = ["Same Contract", "Remove Discount", "Lower Discount"]

@@ -33,8 +33,7 @@ def compute_historical_ev(row, actual_outcome) -> float:
     elif treatment == 'Remove Discount':
         value_accepts = before_discount * (usage * v_rev + f_rev)
     else:
-        # Use the discount column from the row if available
-        discount_offered = row.get(DISCOUNT_INPUT_COL, 0.0)
+        discount_offered = row.get('discount_offered', 0.0)
         value_accepts = (before_discount - discount_offered) * (usage * v_rev + f_rev)
 
     dynamic_outcome_values = {
@@ -127,17 +126,22 @@ def evaluate_scenarios_per_customer(
         optimal_ev_prob_dict = None #For EV
         optimal_prob_prob_dict = None # For Customer Retention
 
+        prob_treatment = dict()
+        ev_treatment = dict()
         scenario_df = pd.DataFrame([customer_row.copy()])
         for treatment in possible_treatments:
 
             actual_outcome = scenario_df['renewal_outcome']
             if treatment == "Lower Discount" and user_discount < scenario_df[DISCOUNT_INPUT_COL].item():
-                scenario_df[DISCOUNT_INPUT_COL] = user_discount
-            elif treatment == "Lower Discount" and user_discount >= scenario_df[DISCOUNT_INPUT_COL].item():
+                scenario_df['discount_offered'] = user_discount
+            elif treatment == "Lower Discount" and user_discount > scenario_df[DISCOUNT_INPUT_COL].item():
                 skip_customer_flag = True
                 continue
-            elif treatment in ["Same Contract", "Remove Discount"]:
-                 scenario_df[DISCOUNT_INPUT_COL] = 0.0
+            elif treatment in ["Same Contract"]:
+                pass
+            elif treatment == 'Remove Discount':
+                scenario_df['discount_offered'] = 0.0
+
 
 
             scenario_df[TREATMENT_INPUT_COL] = treatment
@@ -158,7 +162,8 @@ def evaluate_scenarios_per_customer(
                  continue
             prob_dict = {label: prob_df_scenario.iloc[0].get(f'prob_{label}', np.nan) for label in OUTCOME_LABELS}
             current_ev = compute_expected_value(prob_dict, treatment, scenario_df['usage'], user_discount, scenario_df['before_discount'])
-
+            ev_treatment[treatment] = current_ev
+            prob_treatment[treatment] = prob_dict
             current_prob_accepts = prob_dict.get(retention_class_label, 0.0)
 
             if current_ev > customer_best_ev: #for ev
@@ -181,6 +186,11 @@ def evaluate_scenarios_per_customer(
              else:
                   result_row[col] = np.nan
 
+        for t in possible_treatments:
+            result_row[f'EV for {t}'] = ev_treatment.get(t, np.nan)
+            for label in OUTCOME_LABELS:
+                result_row[f'Prob_{label} for {t}'] = prob_treatment.get(t, {}).get(label, np.nan)
+
         result_row.update({
             'Maximum Expected Value': customer_best_ev if customer_best_ev > -np.inf else np.nan,
             'Best Treatment Plan for Maximum Value': customer_optimal_ev_treatment,
@@ -197,6 +207,7 @@ def evaluate_scenarios_per_customer(
                     label, np.nan) if optimal_prob_prob_dict else np.nan
                 for label in OUTCOME_LABELS}
         })
+
 
         historical_ev = compute_historical_ev(customer_row, actual_outcome)
         result_row['Historical Expected Value'] = historical_ev
@@ -216,7 +227,7 @@ def evaluate_scenarios_per_customer(
     results_df = pd.DataFrame(results_list)
 
     print("===============Results===================")
-    print(results_df)
+    #print(results_df)
     results_df.to_excel('Results.xlsx')
     return results_df
 
