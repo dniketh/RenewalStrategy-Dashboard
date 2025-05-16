@@ -1,5 +1,5 @@
 
-MODEL_PATH = 'saved_model/random_forest_exp1.joblib'
+MODEL_PATH = 'saved_model/xgboost.pkl'
 
 CATEGORICAL_FEATURES_FOR_PREPROCESSING = [
     'state',

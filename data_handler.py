@@ -19,40 +19,32 @@ def load_csv(uploaded_file) -> pd.DataFrame | None:
 
 
 def preprocess_dataframe(df: pd.DataFrame) -> pd.DataFrame | None:
-    """
-    Applies initial feature engineering steps to the DataFrame.
-    The input df can be a single row or multiple rows (from the sampled data).
-    Returns the DataFrame after engineering, before the ColumnTransformer.
-    """
-    df_engineered = df.copy()
+    df_processed = df.copy()
+
     binary_columns = ['green', 'dual_fuel_customer', 'direct_debit_flag']
     for col in binary_columns:
-        if col in df_engineered.columns:
-            df_engineered.loc[:, col] = df_engineered[col].map({'Yes': 1, 'No': 0})
-            df_engineered.loc[:, col] = pd.to_numeric(df_engineered[col], errors='coerce')
+        if col in df_processed.columns and df_processed[col].dtype == 'object':
+            df_processed[col] = df_processed[col].map({'Yes': 1, 'No': 0})
 
-    if 'before_discount' in df_engineered.columns and 'discount_offered' in df_engineered.columns:
-         df_engineered.loc[:, 'before_discount'] = pd.to_numeric(df_engineered['before_discount'], errors='coerce')
-         df_engineered.loc[:, 'discount_offered'] = pd.to_numeric(df_engineered['discount_offered'], errors='coerce')
-         df_engineered.loc[:, 'discount_change'] = df_engineered['discount_offered'] - df_engineered['before_discount']
-    else:
-         df_engineered.loc[:, 'discount_change'] = np.nan
+    categorical_columns = ['state', 'communication_preference', 'age',
+                           'before_channel', 'treatment_given']
+    for col in categorical_columns:
+        if col in df_processed.columns:
+            df_processed[col] = df_processed[col].fillna('Unknown').astype('category')
 
-    if 'renewal_date' in df_engineered.columns:
+    if 'before_discount' in df_processed.columns and 'discount_offered' in df_processed.columns:
+        df_processed['discount_change'] = df_processed['discount_offered'] - df_processed['before_discount']
+
+    if 'renewal_date' in df_processed.columns:
         try:
-            df_engineered.loc[:, 'renewal_date_dt'] = pd.to_datetime(df_engineered['renewal_date'], errors='coerce')
-            df_engineered.loc[:, 'renewal_month'] = df_engineered['renewal_date_dt'].dt.month
-            df_engineered.loc[:, 'renewal_month'] = df_engineered['renewal_month'].astype('category')
-        except Exception as e:
-            print(f"Could not convert renewal_date to datetime or extract month: {e}. Adding 'renewal_month' with NaNs.")
-            df_engineered.loc[:, 'renewal_month'] = np.nan
-            df_engineered.loc[:, 'renewal_month'] = df_engineered['renewal_month'].astype('category')
+            df_processed['renewal_month'] = pd.to_datetime(df_processed['renewal_date']).dt.month.astype('category')
+        except Exception:
+            print("Warning: Could not parse renewal_date.")
 
-    columns_to_drop_engineered = COLUMNS_TO_DROP_RAW + ['renewal_date_dt']
-    df_engineered = df_engineered.drop(columns=columns_to_drop_engineered, errors='ignore')
+    numeric_cols = df_processed.select_dtypes(include=['number']).columns
+    df_processed[numeric_cols] = df_processed[numeric_cols].fillna(-1)
 
+    df_processed = df_processed.drop(columns=['customer_id', 'renewal_date', 'renewal_outcome'], errors='ignore')
 
-
-    print(f"Feature engineering applied successfully. DataFrame shape: {df_engineered.shape}")
-    return df_engineered
+    return df_processed
 
