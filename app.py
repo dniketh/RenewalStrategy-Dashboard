@@ -18,12 +18,12 @@ from visualization_handler import (
     plot_expected_outcome_pie_chart_comparison, plot_single_strategy_expected_counts
 )
 st.set_page_config(
-    page_title="Energy Retail Customer Renewal Strategy Dashboard",
+    page_title="AI-Driven Contract Renewal Optimization System",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.title("Energy Retail Customer Renewal Strategy Dashboard")
+st.title("AI-Driven Contract Renewal Optimization System")
 
 if 'uploaded_data_processed' not in st.session_state:
     st.session_state['uploaded_data_processed'] = False
@@ -202,6 +202,10 @@ if st.session_state['df_per_customer_results'] is not None and not st.session_st
     else:
          st.warning("Total Expected Value (Optimal Retention Treatment) could not be computed.")
 
+   # if 'Historical Expected Value' in df_results.columns and not df_results['Historical Expected Value'].isnull().all():
+        #total_historical_value  = df_results['Historical Expected Value'].sum()
+        #st.metric(label="Total Historical Value (Optimal Retention Treatment)", value=f"${total_historical_value:,.2f}") # Format as currency
+
     st.subheader("Expected Churn Comparison")
 
     churn_outcome_label = 'Churn'
@@ -356,7 +360,8 @@ if st.session_state['df_per_customer_results'] is not None and not st.session_st
             'EV Optimized Accept Probability',
             'Retention-Optimized Accept Prob',
             'Best Treatment Plan for Accepting Renewal',
-            'Maximum Expected Value (For Retention)'
+            'Maximum Expected Value (For Retention)',
+            'Historical Expected Value'
         ]
     elif selected_strategy == STRATEGY_EXPECTED_VALUE:
         display_cols = [
